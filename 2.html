@@ -1,0 +1,316 @@
+import React, { useState, useEffect } from 'react';
+
+// -----------------------------------------------------------------------------
+// 內嵌 SVG 圖示組件 (不依賴外部庫，確保穩定顯示)
+// -----------------------------------------------------------------------------
+const IconRefresh = ({ className }) => (
+  <svg className={className} xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M3 12a9 9 0 0 1 9-9 9.75 9.75 0 0 1 6.74 2.74L21 8"/><path d="M21 3v5h-5"/><path d="M21 12a9 9 0 0 1-9 9 9.75 9.75 0 0 1-6.74-2.74L3 16"/><path d="M3 21v-5h5"/></svg>
+);
+const IconCheckCircle = ({ className }) => (
+  <svg className={className} xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>
+);
+const IconXCircle = ({ className }) => (
+  <svg className={className} xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10"/><line x1="15" y1="9" x2="9" y2="15"/><line x1="9" y1="9" x2="15" y2="15"/></svg>
+);
+const IconAward = ({ className }) => (
+  <svg className={className} xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="8" r="7"/><polyline points="8.21 13.89 7 23 12 20 17 23 15.79 13.88"/></svg>
+);
+const IconArrowRight = ({ className }) => (
+  <svg className={className} xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg>
+);
+const IconLightbulb = ({ className }) => (
+  <svg className={className} xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M15 14c.2-1 .7-1.7 1.5-2.5 1-1 1.5-2 1.5-3.5A6 6 0 0 0 6 8c0 1 .5 2 1.5 2.8.8.7 1.3 1.5 1.5 2.5"/><path d="M9 18h6"/><path d="M10 22h4"/></svg>
+);
+const IconHelpCircle = ({ className }) => (
+  <svg className={className} xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10"/><path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
+);
+
+// -----------------------------------------------------------------------------
+// 貨幣數據與樣式
+// -----------------------------------------------------------------------------
+
+const CURRENCY_TYPES = {
+  c1: { value: 1, type: 'coin', label: '$1', color: 'bg-slate-300', textColor: 'text-slate-600', size: 'w-12 h-12', border: 'border-4 border-slate-400', shape: 'rounded-full' },
+  c2: { value: 2, type: 'coin', label: '$2', color: 'bg-slate-300', textColor: 'text-slate-600', size: 'w-14 h-14', border: 'border-4 border-slate-400 dashed', shape: 'rounded-full clip-wavy' },
+  c5: { value: 5, type: 'coin', label: '$5', color: 'bg-slate-300', textColor: 'text-slate-600', size: 'w-16 h-16', border: 'border-8 border-slate-400', shape: 'rounded-full' },
+  c10: { value: 10, type: 'coin', label: '$10', color: 'bg-yellow-100', textColor: 'text-yellow-700', size: 'w-14 h-14', border: 'border-4 border-slate-400 ring-4 ring-yellow-500', shape: 'rounded-full' },
+  n10: { value: 10, type: 'note', label: '$10', color: 'bg-purple-400', textColor: 'text-white', size: 'w-28 h-14', border: 'border-2 border-purple-600', shape: 'rounded' },
+  n20: { value: 20, type: 'note', label: '$20', color: 'bg-blue-400', textColor: 'text-white', size: 'w-32 h-16', border: 'border-2 border-blue-600', shape: 'rounded' },
+  n50: { value: 50, type: 'note', label: '$50', color: 'bg-green-400', textColor: 'text-white', size: 'w-36 h-18', border: 'border-2 border-green-600', shape: 'rounded' },
+  n100: { value: 100, type: 'note', label: '$100', color: 'bg-red-400', textColor: 'text-white', size: 'w-40 h-20', border: 'border-2 border-red-600', shape: 'rounded' },
+};
+
+const LEVELS = [
+  { target: 'c2', unit: 'c1' },
+  { target: 'c5', unit: 'c1' },
+  { target: 'c10', unit: 'c2' },
+  { target: 'c10', unit: 'c5' },
+  { target: 'n20', unit: 'c10' },
+  { target: 'n20', unit: 'n10' },
+  { target: 'n50', unit: 'n10' },
+  { target: 'n100', unit: 'n20' },
+  { target: 'n100', unit: 'n50' },
+];
+
+const Money = ({ type, count = 1, className = "" }) => {
+  if (!type || !CURRENCY_TYPES[type]) return null;
+  const currency = CURRENCY_TYPES[type];
+  const isWavy = type === 'c2';
+
+  return (
+    <div className={`relative flex flex-col items-center justify-center ${className} select-none transition-transform hover:scale-105`}>
+      <div 
+        className={`
+          ${currency.size} ${currency.color} ${currency.border} ${currency.shape} 
+          flex items-center justify-center shadow-md font-bold text-xl ${currency.textColor}
+          relative
+        `}
+        style={isWavy ? { borderRadius: '50%', borderStyle: 'dashed' } : {}}
+      >
+        {currency.type === 'coin' && (
+          <div className="absolute inset-1 border border-black/10 rounded-full pointer-events-none"></div>
+        )}
+        {currency.type === 'note' && (
+           <div className="absolute inset-2 border-2 border-white/30 rounded pointer-events-none flex justify-between items-center px-2">
+              <span className="text-[10px] opacity-50">HKD</span>
+              <span className="text-[10px] opacity-50">HKD</span>
+           </div>
+        )}
+        <span className="z-10 drop-shadow-sm">{currency.label}</span>
+      </div>
+      {count > 1 && (
+         <span className="absolute -bottom-6 bg-gray-800 text-white text-xs px-2 py-0.5 rounded-full">
+           x {count}
+         </span>
+      )}
+    </div>
+  );
+};
+
+export default function App() {
+  const [question, setQuestion] = useState(null);
+  const [answer, setAnswer] = useState('');
+  const [score, setScore] = useState(0);
+  const [feedback, setFeedback] = useState(null);
+  const [streak, setStreak] = useState(0);
+  const [showHint, setShowHint] = useState(false);
+
+  const generateQuestion = () => {
+    const level = LEVELS[Math.floor(Math.random() * LEVELS.length)];
+    const targetValue = CURRENCY_TYPES[level.target].value;
+    const unitValue = CURRENCY_TYPES[level.unit].value;
+    const correctAnswer = targetValue / unitValue;
+
+    setQuestion({
+      ...level,
+      correctAnswer
+    });
+    setAnswer('');
+    setFeedback(null);
+    setShowHint(false);
+  };
+
+  useEffect(() => {
+    generateQuestion();
+  }, []);
+
+  const handleSubmit = (e) => {
+    e.preventDefault();
+    if (!question) return;
+
+    const val = parseInt(answer);
+    if (val === question.correctAnswer) {
+      setFeedback('correct');
+      setScore(s => s + 10);
+      setStreak(s => s + 1);
+      setShowHint(false);
+    } else {
+      setFeedback('incorrect');
+      setStreak(0);
+    }
+  };
+
+  const isCoin = (typeKey) => CURRENCY_TYPES[typeKey]?.type === 'coin';
+
+  return (
+    <div className="min-h-screen bg-blue-50 font-sans flex flex-col items-center py-8 px-4">
+      
+      {/* Header */}
+      <header className="w-full max-w-2xl bg-white rounded-2xl shadow-lg p-4 md:p-6 mb-8 flex justify-between items-center border-b-4 border-blue-200">
+        <div>
+          <h1 className="text-2xl md:text-3xl font-bold text-blue-600 flex items-center gap-2">
+            <IconRefresh className="w-8 h-8" />
+            錢幣大變身
+          </h1>
+        </div>
+        <div className="flex flex-col items-end">
+          <div className="flex items-center gap-2 text-yellow-500 font-bold text-xl">
+            <IconAward className="w-6 h-6 fill-current" />
+            <span>{score} 分</span>
+          </div>
+          {streak > 1 && (
+            <span className="text-xs font-bold text-orange-500 bg-orange-100 px-2 py-1 rounded-full mt-1">
+              連對 {streak} 題!
+            </span>
+          )}
+        </div>
+      </header>
+
+      {/* Main Game Area */}
+      <main className="w-full max-w-2xl bg-white rounded-3xl shadow-xl p-6 md:p-10 relative overflow-hidden">
+        <div className="absolute top-0 left-0 w-full h-4 bg-gradient-to-r from-blue-400 via-purple-400 to-pink-400"></div>
+
+        {question && (
+          <div className="flex flex-col items-center gap-8">
+            
+            {/* 視覺等式區域 */}
+            <div className="flex flex-col md:flex-row items-center justify-center gap-4 w-full">
+              
+              {/* 左邊：大錢 */}
+              <div className="flex flex-col items-center gap-3 p-4 bg-slate-50 rounded-xl border-2 border-slate-100 w-full md:w-5/12">
+                <span className="text-slate-400 font-bold text-sm tracking-widest">擁有</span>
+                <Money type={question.target} />
+                <span className="text-slate-600 font-bold mt-2">
+                  1 {isCoin(question.target) ? '個' : '張'} {CURRENCY_TYPES[question.target].label}
+                </span>
+              </div>
+
+              {/* 等號 */}
+              <div className="text-4xl font-black text-slate-300">=</div>
+
+              {/* 右邊：目標單位 */}
+              <div className="flex flex-col items-center gap-3 p-4 bg-blue-50 rounded-xl border-2 border-blue-100 w-full md:w-5/12 relative">
+                 <span className="text-blue-400 font-bold text-sm tracking-widest">換成</span>
+                 <div className="w-20 h-20 rounded-full bg-blue-100 flex items-center justify-center text-4xl font-bold text-blue-300">
+                   ?
+                 </div>
+                 <div className="flex items-center gap-2 mt-2">
+                    <Money type={question.unit} className="scale-50 origin-bottom" />
+                    <span className="text-blue-600 font-bold text-sm">
+                        {isCoin(question.unit) ? '硬幣' : '紙幣'}
+                    </span>
+                 </div>
+              </div>
+            </div>
+
+            {/* 提示區域 */}
+            {showHint && feedback !== 'correct' && (
+              <div className="w-full bg-yellow-50 border-2 border-yellow-200 rounded-2xl p-6 animate-in fade-in slide-in-from-top-2">
+                <div className="flex items-center gap-2 mb-4 text-yellow-700 font-bold">
+                  <IconHelpCircle className="w-5 h-5" />
+                  <span>數數看，這裡有多少個 {CURRENCY_TYPES[question.unit].label}？</span>
+                </div>
+                <div className="flex flex-wrap justify-center gap-4">
+                  {/* 動態生成正確數量的錢幣，讓小朋友數 */}
+                  {Array.from({ length: question.correctAnswer }).map((_, i) => (
+                    <div key={i} className="animate-bounce-short" style={{ animationDelay: `${i * 0.1}s` }}>
+                      <Money type={question.unit} />
+                      <span className="block text-center text-slate-400 text-xs mt-1 font-bold">{i + 1}</span>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {/* 輸入與控制區 */}
+            <div className="w-full max-w-md bg-slate-50 p-6 rounded-2xl flex flex-col items-center gap-4">
+              <p className="text-lg font-medium text-slate-700 text-center">
+                請問可以換成多少個 <span className="text-blue-600 font-bold">{CURRENCY_TYPES[question.unit].label}</span>？
+              </p>
+
+              <form onSubmit={handleSubmit} className="flex flex-col items-center gap-4 w-full">
+                <div className="flex items-center justify-center gap-3 w-full">
+                  
+                  {/* 輸入框 */}
+                  <div className="relative w-32 md:w-40">
+                    <input
+                      type="number"
+                      value={answer}
+                      onChange={(e) => setAnswer(e.target.value)}
+                      disabled={feedback === 'correct'}
+                      className="w-full text-center text-3xl font-bold p-3 rounded-xl border-4 border-blue-200 focus:border-blue-500 focus:outline-none text-slate-700 bg-white"
+                      placeholder="?"
+                      autoFocus
+                    />
+                  </div>
+
+                  {/* 提示按鈕 */}
+                  {feedback !== 'correct' && (
+                    <button
+                      type="button"
+                      onClick={() => setShowHint(!showHint)}
+                      className={`p-3 rounded-xl border-4 transition-all active:scale-95 flex flex-col items-center justify-center w-20 h-[76px]
+                        ${showHint 
+                          ? 'bg-yellow-100 border-yellow-400 text-yellow-700' 
+                          : 'bg-white border-slate-200 text-slate-400 hover:border-yellow-300 hover:text-yellow-500'}
+                      `}
+                      title="顯示提示"
+                    >
+                      <IconLightbulb className={`w-6 h-6 ${showHint ? 'fill-yellow-500' : ''}`} />
+                      <span className="text-xs font-bold mt-1">提示</span>
+                    </button>
+                  )}
+                </div>
+
+                {/* 提交/下一題 按鈕區 */}
+                <div className="w-full mt-2">
+                  {feedback === null ? (
+                    <button
+                      type="submit"
+                      disabled={!answer}
+                      className="w-full bg-blue-500 hover:bg-blue-600 text-white font-bold py-3 px-6 rounded-xl shadow-lg transition-transform active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed"
+                    >
+                      檢查答案
+                    </button>
+                  ) : (
+                    <div className="flex flex-col items-center gap-4 w-full animate-in fade-in slide-in-from-bottom-2">
+                      {feedback === 'correct' ? (
+                        <div className="flex flex-col items-center gap-3 w-full">
+                          <div className="flex items-center gap-2 text-green-500 font-bold text-xl">
+                            <IconCheckCircle className="w-8 h-8" />
+                            <span>答對了！</span>
+                          </div>
+                          <button
+                            onClick={generateQuestion}
+                            className="w-full bg-green-500 hover:bg-green-600 text-white font-bold py-3 px-8 rounded-xl shadow-lg flex items-center justify-center gap-2 animate-pulse"
+                          >
+                            下一題 <IconArrowRight className="w-5 h-5" />
+                          </button>
+                        </div>
+                      ) : (
+                        <div className="flex flex-col items-center gap-3 w-full">
+                          <div className="flex items-center gap-2 text-red-500 font-bold text-xl">
+                            <IconXCircle className="w-8 h-8" />
+                            <span>不對喔，試試看提示？</span>
+                          </div>
+                          <button
+                            onClick={() => { setFeedback(null); setAnswer(''); }}
+                            className="w-full bg-slate-200 hover:bg-slate-300 text-slate-600 font-bold py-3 px-6 rounded-xl"
+                          >
+                            重試
+                          </button>
+                        </div>
+                      )}
+                    </div>
+                  )}
+                </div>
+              </form>
+            </div>
+          </div>
+        )}
+      </main>
+
+      {/* Global Styles */}
+      <style>{`
+        @keyframes bounce-short {
+          0%, 100% { transform: translateY(0); }
+          50% { transform: translateY(-10px); }
+        }
+        .animate-bounce-short {
+          animation: bounce-short 0.5s ease-in-out infinite;
+        }
+        .clip-wavy { border-style: dotted; }
+      `}</style>
+    </div>
+  );
+}
